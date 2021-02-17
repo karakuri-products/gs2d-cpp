@@ -10,8 +10,6 @@
 * 
 */
 #pragma once
-#include <new.h>
-#include <Arduino.h>
 
 /* Includes ------------------------------------------------------------------*/
 #include <inttypes.h>
