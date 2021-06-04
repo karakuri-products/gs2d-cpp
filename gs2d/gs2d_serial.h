@@ -9,7 +9,7 @@
 /* Includes ------------------------------------------------------------------*/
 /* USER INCLUDE CODE START */
 
-// TODO : �V���A������ɕK�v�ȃt�@�C�����C���N���[�h
+// TODO : シリアル送受信に必要なファイルをインクルードする
 
 /* USER INCLUDE CODE END */
 
@@ -24,8 +24,8 @@ public:
 	{
 		/* USER OPEN CODE START */
 
-		// TODO : �|�[�g���J���BIO�̏�������
-		// �߂�l�͌��ݎg���Ă��Ȃ��̂�0
+		// TODO : シリアルポート初期化処理
+		// RS485の場合はTXENのIOも初期化
 
 		/* USER OPEN CODE END */
 		return 0;
@@ -35,7 +35,7 @@ public:
 	{
 		/* USER CLOSE CODE START */
 
-		// �|�[�g����鏈��
+		// TODO : シリアルポートを閉じる処理
 
 		/* USER CLOSE CODE END */
 		return;
@@ -45,8 +45,8 @@ public:
 	{
 		/* USER IS_CONNECTED CODE START */
 
-		// ���݂̐ڑ���Ԃ�Ԃ��B
-		// �߂�l -> �J����Ă���Ƃ� : 1, �����Ă��鎞 : 0
+		// TODO : シリアルポートの接続状態を返す関数
+		// 開いている時に１，閉じている時に0を返す
 
 		/* USER IS_CONNECTED CODE END */
 		return 0;
@@ -56,7 +56,7 @@ public:
 	{
 		/* USER READ CODE START */
 
-		// TODO : 1�o�C�g�ǂݍ��݁B�o�b�t�@�Ƀf�[�^�������ꍇ��-1��Ԃ��B
+		// TODO : データがバッファにあればデータを、無ければ -1 を返す
 
 		/* USER READ CODE END */
 
@@ -67,8 +67,8 @@ public:
 	{
 		/* USER WRITE CODE START */
 
-		// TODO : �w�肳�ꂽ�o�C�g���̏������݁BTXDEN�s���̐���
-		// �߂�l�͎g���Ă��Ȃ�����0
+		// TODO : データ送信関数
+		// RS485のTXENもここで操作
 
 		/* USER WRITE CODE END */
 		return 0;
@@ -78,8 +78,7 @@ public:
 	{
 		/* USER TIME CODE START */
 
-		// TODO : �N�����Ă���̎��Ԃ�ms�P�ʂŕԂ��B
-		// �s���m�ȏꍇ�^�C���A�E�g�����������삵�Ȃ�
+		// TODO : ms単位で開始からの経過時間を返す
 
 		/* USER TIME CODE END */
 		return 0;

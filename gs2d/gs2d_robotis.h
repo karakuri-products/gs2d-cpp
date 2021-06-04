@@ -18,11 +18,11 @@ namespace gs2d
 	class RobotisP20 : public CommandHandler<SerialClass, bufferSize, commandSize>, public Driver
 	{
 	private:
-		// ��R�[���o�b�N���̃f�[�^�󂯓n���p
+		// 受信データバッファ
 		EventDataType responseData;
 		Gs2dType<bool> isReceived;
 
-		// �C���X�g���N�V����
+		// コマンドリスト
 		struct Instructions
 		{
 			static const uint8_t Ping = 0x01;
@@ -38,7 +38,7 @@ namespace gs2d
 			static const uint8_t BulkWrite = 0x93;
 		};
 
-		// �A�h���X
+		// アドレスリスト
 		struct Address
 		{
 			static const uint8_t Id = 7;
@@ -64,53 +64,53 @@ namespace gs2d
 			static const uint8_t PresentTemperature = 146;
 		};
 
-		// ��M�����m�F�֐�
+		// 受信完了チェック関数
 		bool isComplete(uint8_t* data, uint8_t length)
 		{
 			if (length < 6) return false;
 			return (length >= data[5] + 7);
 		}
 
-		// ID�`�F�b�N�֐�
+		// ID不正チェック関数
 		bool checkId(uint8_t id)
 		{
 			if (id < 0 || id > 254 || id == 253) return false;
 			return true;
 		}
 
-		// ��M���̃R�[���o�b�N
+		// 受信イベント関数
 		void dataReceivedEvent(uint8_t* data, uint8_t length, uint8_t status)
 		{
-			uint32_t tmp = 0; // ��M�f�[�^�ꎞ�ۑ��p
+			uint32_t tmp = 0; // パラメータ用
 			uint16_t paramLength = 0;
 
-			// �G���[�̕ۑ�
+			// エラーステータスを更新
 			this->errorBits |= status;
 
 			do {
-				// �G���[������ΏI��
+				// エラー状態チェック
 				if (this->errorBits != 0) break;
 
-				// �Œ���̒������m�F
+				// 最低限の長さがあるか確認
 				if (length < 9) { this->errorBits |= ResponseError; break; }
 
-				// �C���X�g���N�V�����l���m�F
+				// インストラクション値を確認
 				if (data[7] != 0x55) { this->errorBits |= ResponseError; break; }
 
-				// Length���m�F
+				// Lengthを取得して確認
 				paramLength = (data[5] + (data[6] << 8));
 				if (length != paramLength + 7) { this->errorBits |= ResponseError; break; }
 
-				// Error�o�C�g���m�F
+				// Errorバイトを確認
 				if (data[8] != 0) { this->errorBits |= ResponseError; break; }
 
+				// CheckSum検証
 				uint16_t crc = data[length - 2] + (data[length - 1] << 8);
 				if (crc != crc16::calculate(data, length - 2)) { this->errorBits |= ResponseError; break; }
 			} while (false);
 
-			// �G���[���N�����Ă���΋����I��
+			// エラーがあれば終了
 			if (this->errorBits != 0) {
-				// �R�[���o�b�N�݂�
 				if (this->currentCommand.callback) {
 					CallbackEventArgs e(this->errorBits);
 					this->currentCommand.callback(e);
@@ -122,14 +122,14 @@ namespace gs2d
 				return;
 			}
 
-			// Parameter������ΐ؂�o��
+			// Parameterがあれば切り出し
 			if (paramLength > 4) {
 				for (int i = 0; i < paramLength - 4; i++) {
 					tmp += (data[9 + i] << (i * 8));
 				}
 			}
 
-			// �f�[�^���������ďI��
+			// データをコールバックか戻り値へ
 			if (this->currentCommand.responseProcess) {
 				if (this->currentCommand.callback) {
 					CallbackEventArgs e(data[4], this->errorBits, this->currentCommand.responseProcess(tmp));
@@ -154,7 +154,7 @@ namespace gs2d
 			}
 		}
 
-		// �p�����[�^�����֐�
+		// コマンドのパラメータ部生成
 		template<typename T>
 		uint8_t generateParameters(uint16_t address, T data, uint8_t length, uint8_t* buffer)
 		{
@@ -169,29 +169,28 @@ namespace gs2d
 			return length + 2;
 		}
 
-		// ��M�֐�
 		EventDataType getFunction(uint8_t id, uint8_t instruction, uint8_t* param = 0, uint8_t length = 0, ResponseProcess responseProcess = 0, CallbackType callback = 0, uint8_t count = 1)
 		{
-			// �o�C�g��̒������v�Z
+			// コマンドの長さを取得
 			uint8_t bufferLength = 4 + 1 + 2 + 1 + 2 + length;
 
-			// �o�C�g��𐶐�
+			// コマンド領域を確保
 			uint8_t* command = new uint8_t[bufferLength];
 
-			// �w�b�_��ID��ݒ�
+			// ヘッダー設定
 			command[0] = 0xFF; command[1] = 0xFF; command[2] = 0xFD; command[3] = 0x00; command[4] = id;
 
-			// ������ݒ�
+			// Length設定
 			command[5] = ((length + 3) & 0xFF);
 			command[6] = (((length + 3) >> 8) & 0xFF);
 			
-			// Instruction��ݒ�
+			// Instruction設定
 			command[7] = instruction;
 
 			// Parameters
 			if(length) memcpy(command + 8, param, length);
 
-			// CheckSum��ݒ�
+			// CheckSum設定
 			uint16_t crc = crc16::calculate(command, bufferLength - 2);
 			command[bufferLength - 2] = crc & 0xFF;
 			command[bufferLength - 1] = (crc >> 8) & 0xFF;
@@ -199,20 +198,20 @@ namespace gs2d
 			// Clear Error
 			this->errorBits = 0;
 
-			// ��}���`�X���b�h���[�h���̓R�[���o�b�N���g��Ȃ��ꍇ�󂫑҂�
+			// バス待ち
 			if (!operatingMode || callback == 0) {
 				while (!this->isTrafficFree.get());
 				this->isReceived.set(false);
 			}
 
-			// �R�}���h���M
+			// 送信
 			this->addCommand(command, bufferLength, responseProcess, callback, count);
 			delete [] command;
 
-			// �}���`�X���b�h���[�h�ŃR�[���o�b�N������ΔC���ďI��
+			// 不必要なら空データを返す
 			if (operatingMode && callback != 0 || count == 0) return EventDataType((int32_t)0);
 
-			// ��M�҂�
+			// 同期モードの時はリスナを起動
 			while (!isReceived.get())
 			{
 				if (!this->operatingMode) this->listener();
@@ -250,33 +249,26 @@ namespace gs2d
 		// General
 		uint32_t readMemory(uint8_t id, uint16_t address, uint8_t length, CallbackType callback)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t paramLength = generateParameters(address, length, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, paramLength, 0, callback);
 		}
 		void writeMemory(uint8_t id, uint16_t address, uint32_t data, uint8_t length)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t paramLength = generateParameters(address, data, length, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, paramLength, 0, defaultWriteCallback);
 		}
 
 		// Ping
 		uint16_t ping(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
 			return (int32_t)getFunction(id, Instructions::Ping, 0, 0, pingProcess, callback);
@@ -285,145 +277,113 @@ namespace gs2d
 		// Torque
 		uint8_t readTorqueEnable(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::TorqueEnable, 1, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, readTorqueProcess, callback);
 		}
 		void writeTorqueEnable(uint8_t id, uint8_t torque)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::TorqueEnable, torque, 1, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// Temperature
 		uint16_t readTemperature(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentTemperature, 1, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, 0, callback);
 		}
 
 		// Current
 		int32_t readCurrent(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentCurrent, 2, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, currentProcess, callback);
 		}
 
 		// Voltage
 		gFloat readVoltage(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentVoltage, 2, 2, param);
 
-			// ���M
 			return (gFloat)getFunction(id, Instructions::Read, param, length, voltageProcess, callback);
 		}
 
 		// Target Position
 		gFloat readTargetPosition(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::GoalPosition, 4, 2, param);
 
-			// ���M
 			return (gFloat)getFunction(id, Instructions::Read, param, length, targetPositionProcess, callback);
 		}
 
 		void writeTargetPosition(uint8_t id, gFloat position)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return; }
 
-			// �G���[����
 			if (position > 180.0) position = 180.0;
 			else if (position < -180.0) position = -180.0;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::GoalPosition, (uint32_t)((position + 180.0) * 4096.0 / 360.0), 4, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// Current Position
 		gFloat readCurrentPosition(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentPosition, 4, 2, param);
 
-			// ���M
 			return (gFloat)getFunction(id, Instructions::Read, param, length, targetPositionProcess, callback);
 		}
 
 		// Offset
 		gFloat readOffset(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::HomingOffset, 4, 2, param);
 
-			// ���M
 			return (gFloat)getFunction(id, Instructions::Read, param, length, offsetProcess, callback);
 		}
 		void writeOffset(uint8_t id, gFloat offset)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return; }
 
-			// �G���[����
 			offset /= 0.088;
 
 			if (offset > 1044479) offset = 1044479;
 			else if (offset < -1044479) offset = -1044479;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::HomingOffset, (uint32_t)(offset), 4, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
@@ -434,154 +394,119 @@ namespace gs2d
 		// Target Time
 		gFloat readTargetTime(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::ProfileVelocity, 4, 2, param);
 
-			// ���M
 			return (gFloat)getFunction(id, Instructions::Read, param, length, targetTimeProcess, callback);
 		}
 		void writeTargetTime(uint8_t id, gFloat targetTime)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return; }
 
-			// �G���[����
 			if (targetTime < 0) targetTime = 0;
 			else if (targetTime > 32.737) targetTime = 32.737;
 
 			targetTime *= 1000.0;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::ProfileVelocity, (uint32_t)targetTime, 4, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// Accel Time
 		gFloat readAccelTime(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::ProfileAcceleration, 4, 2, param);
 
-			// ���M
 			return (gFloat)getFunction(id, Instructions::Read, param, length, targetTimeProcess, callback);
 		}
 		void writeAccelTime(uint8_t id, gFloat accelTime)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return; }
 
-			// �G���[����
 			if (accelTime < 0) accelTime = 0;
 			else if (accelTime > 32.737) accelTime = 32.737;
 
 			accelTime *= 1000.0;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::ProfileAcceleration, (uint32_t)accelTime, 4, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// P Gain
 		uint32_t readPGain(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PositionPGain, 2, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, 0, callback);
 		}
 		void writePGain(uint8_t id, uint32_t gain)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return; }
 
-			// �G���[����
 			if (gain < 0) gain = 0;
 			else if (gain > 16383) gain = 16383;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PositionPGain, (uint32_t)gain, 2, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// I Gain
 		uint32_t readIGain(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PositionIGain, 2, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, 0, callback);
 		}
 		void writeIGain(uint8_t id, uint32_t gain)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return; }
 
-			// �G���[����
 			if (gain < 0) gain = 0;
 			else if (gain > 16383) gain = 16383;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PositionIGain, (uint32_t)gain, 2, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// D Gain
 		uint32_t readDGain(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PositionDGain, 2, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, 0, callback);
 		}
 		void writeDGain(uint8_t id, uint32_t gain)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return; }
 
-			// �G���[����
 			if (gain < 0) gain = 0;
 			else if (gain > 16383) gain = 16383;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PositionDGain, (uint32_t)gain, 2, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
@@ -592,62 +517,48 @@ namespace gs2d
 		// Speed
 		gFloat readSpeed(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentVelocity, 4, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, speedProcess, callback);
 		}
 		void writeSpeed(uint8_t id, gFloat speed)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return; }
 
-			// �G���[����
 			uint32_t rev_min = (int)(speed / 0.229 / 6.0);
 			if (rev_min < 0) rev_min = 0;
 			else if (rev_min > 32737) rev_min = 32737;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::ProfileVelocity, (uint32_t)rev_min, 4, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// ID
 		uint32_t readID(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::Id, 1, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, 0, callback);
 		}
 		void writeID(uint8_t id, uint32_t newid)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 			if (!checkId(newid)) { badInput(); return; }
 
-			// �G���[����
 			if (newid < 0) newid = 0;
 			else if (newid > 252) newid = 252;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::Id, (uint32_t)newid, 1, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
@@ -663,19 +574,15 @@ namespace gs2d
 		// Baudrate
 		uint32_t readBaudrate(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)){ badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::Baudrate, 1, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, baudrateProcess, callback);
 		}
 		void writeBaudrate(uint8_t id, uint32_t baudrate)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
 			int32_t baudrateList[8]{ 9600, 57600, 115200, 1000000, 2000000, 3000000, 4000000, 4500000 };
@@ -684,144 +591,112 @@ namespace gs2d
 			for (uint8_t i = 0; i < 8; i++) { if (baudrateList[i] == baudrate) { baudrateIndex = i; break; } }
 			if (baudrateIndex == 100) { badInput(); return; }
 
-
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::Baudrate, (uint32_t)baudrateIndex, 1, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// CW Limit Position
 		gFloat readLimitCWPosition(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::MinPositionLimit, 4, 2, param);
 
-			// ���M
 			return (gFloat)getFunction(id, Instructions::Read, param, length, targetPositionProcess, callback);
 		}
 		void writeLimitCWPosition(uint8_t id, gFloat limitPosition)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
-			// �G���[����
 			if (limitPosition > 180.0) limitPosition = 180.0;
 			else if (limitPosition < -180.0) limitPosition = -180.0;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::MinPositionLimit, (uint32_t)((limitPosition + 180.0) * 4096.0 / 360.0), 4, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// CCW Limit Position
 		gFloat readLimitCCWPosition(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::MaxPositionLimit, 4, 2, param);
 
-			// ���M
 			return (gFloat)getFunction(id, Instructions::Read, param, length, targetPositionProcess, callback);
 		}
 		void writeLimitCCWPosition(uint8_t id, gFloat limitPosition)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
-			// �G���[����
 			if (limitPosition > 180.0) limitPosition = 180.0;
 			else if (limitPosition < -180.0) limitPosition = -180.0;
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::MaxPositionLimit, (uint32_t)((limitPosition + 180.0) * 4096.0 / 360.0), 4, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// Temperature Limit
 		uint32_t readLimitTemperature(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::TemperatureLimit, 1, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, 0, callback);
 		}
 		void writeLimitTemperature(uint8_t id, uint32_t temperature)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::TemperatureLimit, (uint32_t)temperature, 1, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// Curent Limit
 		uint32_t readLimitCurrent(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::CurrentLimit, 2, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, currentProcess, callback);
 		}
 		void writeLimitCurrent(uint8_t id, uint32_t current)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
-			// ���̓`�F�b�N
 			if(current < 0 || current > 3210) { badInput(); return; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::CurrentLimit, (uint32_t)(current / 2.69), 2, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 
 		// Drive Mode
 		uint32_t readDriveMode(uint8_t id, CallbackType callback = 0)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
-			// �p�����[�^����
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::DriveMode, 1, 2, param);
 
-			// ���M
 			return (int32_t)getFunction(id, Instructions::Read, param, length, 0, callback);
 		}
 		void writeDriveMode(uint8_t id, uint32_t mode)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
 			if (mode > 5) { badInput(); return; }
@@ -829,7 +704,6 @@ namespace gs2d
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::DriveMode, (uint32_t)mode, 1, param);
 
-			// ���M
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
 

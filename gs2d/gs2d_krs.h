@@ -18,11 +18,11 @@ namespace gs2d
 	class KRS : public CommandHandler<SerialClass, bufferSize, commandSize>, public Driver
 	{
 	private:
-		// ��R�[���o�b�N���̃f�[�^�󂯓n���p
+		// 受信データバッファ
 		EventDataType responseData;
 		Gs2dType<bool> isReceived;
 
-		// EEPROM�ǂݍ��ݑΏۂ̕ۑ��p
+		// EEPROM読み込み用
 		struct KRSTarget {
 			uint8_t address;
 			uint8_t length;
@@ -30,8 +30,7 @@ namespace gs2d
 		CircularBuffer<KRSTarget, bufferSize> targetStack;
 		KRSTarget currentTarget;
 
-		// EEPROM�ǂݍ��ݑΏۂ𓯎��ɕۑ�����addCommand, sendCommand�֐�
-		// �R�}���h�ǉ��֐�
+		// EEPROM用に関数二つをoverride
 		void addCommand(uint8_t* data, uint8_t length, ResponseProcess response, CallbackType callback, KRSTarget target = { 0, 0 })
 		{
 			CommandBufferType<commandSize> command(data, length, 1, response, callback);
@@ -40,37 +39,35 @@ namespace gs2d
 			if (this->isTrafficFree.get()) sendCommand();
 		}
 
-		// �R�}���h���M
 		void sendCommand()
 		{
-			// �R�}���h�����o���đ��M
 			this->currentCommand = this->commandStack.pop();
 			currentTarget = targetStack.pop();
 			this->serialPort.write(this->currentCommand.data, this->currentCommand.length);
 
-			// ���X�i������
 			this->responsePos = 0;
 			this->isTrafficFree.set(false);
 			this->startTime = this->serialPort.time();
 		}
 
-		// ROM�ǂݍ��݃t���O
+		// 受信データバッファ
 		bool isReadRomFlag = false;
 		uint8_t eepromData[64];
 
-		// ��M�����m�F�֐�
+		// 受信完了チェック関数
 		bool isComplete(uint8_t* data, uint8_t length)
 		{
 			if (length == 0) return false;
 
 			uint8_t header = (uint8_t)((data[0] & 0b11100000) >> 5);
 
+			// ヘッダの値からデータ長を判定
 			switch (header)
 			{
-			case 0: // �|�W�V�����ݒ�̕ԐM�R�}���h
+			case 0: 
 			case 4:
 				return (length >= 3);
-			case 1: // �ǂݏo���R�}���h
+			case 1: 
 				if (length < 2) return false;
 				switch (data[1]) 
 				{
@@ -78,7 +75,7 @@ namespace gs2d
 				case 5: return (length >= 4);
 				default: return (length >= 3);
 				}
-			case 2: // �������݃R�}���h
+			case 2: 
 				if (length < 2) return false;
 				switch (data[1])
 				{
@@ -90,24 +87,23 @@ namespace gs2d
 			return false;
 		}
 
-		// ID�`�F�b�N�֐�
+		// ID不正チェック関数
 		bool checkId(uint8_t id)
 		{
 			if (id < 0 || id > 31) return false;
 			return true;
 		}
 
-		// ��M���̃R�[���o�b�N
+		// 受信イベント関数
 		void dataReceivedEvent(uint8_t* data, uint8_t length, uint8_t status)
 		{
 			uint32_t tmp = 0;
 
-			// �G���[�̕ۑ�
+			// エラーステータスを更新
 			this->errorBits |= status;
 
-			// �G���[���N�����Ă���΋����I��
+			// エラーがあれば強制的に完了処理
 			if (this->errorBits != 0) {
-				// �R�[���o�b�N�݂�
 				if (this->currentCommand.callback) {
 					CallbackEventArgs e(this->errorBits);
 					this->currentCommand.callback(e);
@@ -118,7 +114,7 @@ namespace gs2d
 				return;
 			}
 
-			// Parameter������ΐ؂肾��
+			// パラメータ範囲を抽出
 			uint8_t command = (uint8_t)((data[0] & 0b11100000) >> 5);
 			switch (command)
 			{
@@ -142,7 +138,7 @@ namespace gs2d
 			default: tmp = 0; break;
 			}
 
-			// �f�[�^���������ďI��
+			// エラーがなければ完了処理
 			if (this->currentCommand.responseProcess) {
 				if (this->currentCommand.callback) {
 					CallbackEventArgs e(data[0] & 0b11111, this->errorBits, this->currentCommand.responseProcess(tmp));
@@ -168,8 +164,8 @@ namespace gs2d
 		}
 
 		EventDataType getFunction(uint8_t* command, uint8_t length, ResponseProcess responseProcess = 0, CallbackType callback = 0, KRSTarget target = { 0, 0 })
-		{
-			// ��}���`�X���b�h���[�h���̓R�[���o�b�N���g��Ȃ��ꍇ�󂫑҂�
+		{			
+			// コールバックが無い且つ同期モードの時のみバス待ち
 			if (!operatingMode || callback == 0) {
 				while (!this->isTrafficFree.get());
 				this->isReceived.set(false);
@@ -178,13 +174,13 @@ namespace gs2d
 			// Clear Error
 			this->errorBits = 0;
 
-			// �R�}���h���M
+			// コマンドを送信
 			this->addCommand(command, length, responseProcess, callback, target);
 
-			// �}���`�X���b�h���[�h�ŃR�[���o�b�N������ΔC���ďI��
+			// 不必要なら空データを返す
 			if (operatingMode && callback != 0) return EventDataType((int32_t)0);
 
-			// ��M�҂�
+			// 同期モードの時はリスナを起動
 			while (!isReceived.get())
 			{
 				if (!this->operatingMode) this->listener();
@@ -220,24 +216,21 @@ namespace gs2d
 		{
 			uint8_t command[2] = { (0b10100000 | id), 0x00 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
-			// �p�����[�^�`�F�b�N
 			if (address + length > 64) { badInput(); return 0; }
 
 			return (int32_t)getFunction(command, 2, 0, callback, { (uint8_t)address, length });
 		}
 		void writeMemory(uint8_t id, uint16_t address, uint32_t data, uint8_t length)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
-			// �p�����[�^�`�F�b�N
+			// 一度もEEPROMを読み込んでいない場合は終了
 			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
 			if (address + length > 64) { badInput(); return; }
 
-			// EEPROM�f�[�^����������
+			// EEPROMデータを更新
 			for (uint8_t i = 0; i < length; i++) eepromData[address + i] = ((data >> (8 * i)) & 0xFF);
 
 			uint8_t command[66];
@@ -251,7 +244,6 @@ namespace gs2d
 		{
 			uint8_t command[2] = { (0b10100000 | id), 0x00 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (int32_t)getFunction(command, 2, 0, callback, { 0, 2 });
@@ -266,7 +258,6 @@ namespace gs2d
 		{
 			uint8_t command[2] = { (0b10100000 | id), 0x04 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (int32_t)getFunction(command, 2, temperatureProcess, callback);
@@ -277,7 +268,6 @@ namespace gs2d
 		{
 			uint8_t command[2] = { (0b10100000 | id), 0x03 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (int32_t)getFunction(command, 2, currentProcess, callback);
@@ -292,11 +282,9 @@ namespace gs2d
 		{
 			uint8_t command[3] = { (0b10000000 | id), 0, 0 };
 
-			// Position�l���m�F
 			if (position < -135) position = -135;
 			else if (position > 135) position = 135;
 
-			// Position��KRS�p�ɕϊ�
 			uint16_t tch = (uint16_t)(7500 - 29.629 * position);
 
 			command[1] = ((tch >> 7) & 0x7F);
@@ -309,7 +297,6 @@ namespace gs2d
 		{
 			uint8_t command[2] = { (0b10100000 | id), 0x05 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (gFloat)getFunction(command, 2, positionProcess, callback);
@@ -324,22 +311,19 @@ namespace gs2d
 		{
 			uint8_t command[2]{ 0b10100000 | id, 0x00 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (gFloat)getFunction(command, 2, 0, callback, { 8, 2 });
 		}
 		void writeDeadband(uint8_t id, gFloat deadband)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
-			// �p�����[�^�`�F�b�N
 			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
 			if (deadband < 0) { deadband = 0; }
 			else if (deadband > 5) deadband = 5;
 
-			// EEPROM�f�[�^����������
+			// EEPROMデータを更新
 			eepromData[8] = 0; eepromData[9] = deadband;
 
 			uint8_t command[66];
@@ -361,7 +345,6 @@ namespace gs2d
 		{
 			uint8_t command[2] = { (0b10100000 | id), 0x01 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (int32_t)getFunction(command, 2, 0, callback);
@@ -370,7 +353,6 @@ namespace gs2d
 		{
 			uint8_t command[3] = { (0b11000000 | id), 1, 0};
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
 			if (gain < 1) gain = 1;
@@ -398,7 +380,6 @@ namespace gs2d
 		{
 			uint8_t command[2] = { (0b10100000 | id), 0x02 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (gFloat)getFunction(command, 2, 0, callback);
@@ -407,7 +388,6 @@ namespace gs2d
 		{
 			uint8_t command[3] = { (0b11000000 | id), 2, 0 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
 			if (speed < 1) speed = 1;
@@ -423,7 +403,6 @@ namespace gs2d
 		{
 			uint8_t command[4] = { 0xFF, 0, 0, 0 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (int32_t)getFunction(command, 4, 0, callback);
@@ -432,7 +411,6 @@ namespace gs2d
 		{
 			uint8_t command[4]{ 0b11100000, 1, 1, 1 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return ; }
 			if (!checkId(newid)) { badInput(); return ; }
 
@@ -451,17 +429,14 @@ namespace gs2d
 		{
 			uint8_t command[2]{ 0b10100000 | id, 0x00 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (int32_t)getFunction(command, 2, baudrateProcess, callback, { 26, 2 });
 		}
 		void writeBaudrate(uint8_t id, uint32_t baudrate)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
-			// �p�����[�^�`�F�b�N
 			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
 
 			uint8_t baudrateId = 0;
@@ -486,17 +461,14 @@ namespace gs2d
 		{
 			uint8_t command[2]{ 0b10100000 | id, 0x00 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (gFloat)getFunction(command, 2, positionProcess, callback, { 16, 4 });
 		}
 		void writeLimitCWPosition(uint8_t id, gFloat limitPosition)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
-			// �p�����[�^�`�F�b�N
 			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
 
 			int position = (7500 - limitPosition * 29.629);
@@ -517,17 +489,14 @@ namespace gs2d
 		{
 			uint8_t command[2]{ 0b10100000 | id, 0x00 };
 
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return 0; }
 
 			return (gFloat)getFunction(command, 2, positionProcess, callback, { 20, 4 });
 		}
 		void writeLimitCCWPosition(uint8_t id, gFloat limitPosition)
 		{
-			// ID�`�F�b�N
 			if (!checkId(id)) { badInput(); return; }
 
-			// �p�����[�^�`�F�b�N
 			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
 
 			int position = (7500 - limitPosition * 29.629);

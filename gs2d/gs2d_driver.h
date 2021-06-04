@@ -17,14 +17,14 @@ namespace gs2d
 	class Driver
 	{
 	protected:
-		// �G���[�֌W
+		// エラーコード保存用（例外発生はしない）
 		uint8_t errorBits = 0;
 		void notSupport(void) { errorBits |= NotSupportError; }
 		void badInput(void) { 
 			errorBits |= BadInputError; 
 		}
 
-		// ���샂�[�h
+		// 同期/非同期モードのフラグ
 		bool operatingMode = false;
 
 	public:

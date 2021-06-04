@@ -16,7 +16,7 @@
 
 namespace gs2d
 {
-	// �G���[��`
+	// gs2d用エラーコード
 	enum {
 		TimeoutError = 0x01,
 		ResponseError = 0x02,
@@ -26,10 +26,10 @@ namespace gs2d
 	};
 
 /* Classes -------------------------------------------------------------------*/
-	// gs2d�̕��������_�^
+	// gs2dで扱う浮動小数点の型
 	using gFloat = float;
 
-	// Int, Float���ʏ����p�N���X
+	// Int, Floatの戻り地に対応するためのクラス
 	class EventDataType
 	{
 	private:
@@ -50,16 +50,16 @@ namespace gs2d
 		void set(gFloat data) { intData = (int32_t)data; floatData = data; flag = true; }
 	};
 
-	// �R�[���o�b�N�̈����^
+	// コールバックの引数用クラス
 	class CallbackEventArgs
 	{
 	public:
-		// �R�[���o�b�N����
+		// ID, エラー状態、データ(int or gFloat)
 		uint8_t id;
 		uint8_t status;
 		EventDataType data;
 
-		// �R���X�g���N�^
+		// 各種コンストラクタ
 		CallbackEventArgs(uint8_t id, uint8_t status, gFloat data) :id(id), status(status), data(data) {}
 		CallbackEventArgs(uint8_t id, uint8_t status, int32_t data) : id(id), status(status), data(data) {}
 		CallbackEventArgs(uint8_t id, uint8_t status, EventDataType data) : id(id), status(status) { this->data = data; }
@@ -67,7 +67,7 @@ namespace gs2d
 		~CallbackEventArgs() {}
 	};
 
-	// �R�}���h�ۑ��p�o�b�t�@
+	// gs2d用サーキュラバッファクラス
 	template<class T, unsigned char bufferSize = 50>
 	class CircularBuffer
 	{
@@ -102,7 +102,7 @@ namespace gs2d
 		bool isEmpty() { return (writePos == readPos); }
 	};
 
-	// �X���b�h�ԃf�[�^�󂯓n���p
+	// スレッドセーフにする必要があるかもしれないので、念の為
 	template<class T>
 	class Gs2dType
 	{
@@ -117,9 +117,9 @@ namespace gs2d
 		~Gs2dType() {}
 	};
 
-	// ��M�f�[�^�̕ϊ��֐��̌^
+	// 受信データ処理関数の型
 	using ResponseProcess = EventDataType(*)(int32_t);
 
-	// �R�[���o�b�N�֐��̌^
+	// コールバック関数の型
 	using CallbackType = void(*)(CallbackEventArgs);
 }

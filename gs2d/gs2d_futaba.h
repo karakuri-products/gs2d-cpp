@@ -18,7 +18,7 @@ namespace gs2d
     class Futaba : public CommandHandler<SerialClass, bufferSize, commandSize>, public Driver
     {
     private:
-        // ��R�[���o�b�N���̃f�[�^�󂯓n���p
+		// 受信データバッファ
         EventDataType responseData;
         Gs2dType<bool> isReceived;
 
@@ -45,14 +45,14 @@ namespace gs2d
             static const uint8_t ResetMemory = 0xFF;
         };
 
-        // ��M�����m�F�֐�
+		// 受信完了チェック関数
         bool isComplete(uint8_t* data, uint8_t length)
         {
             if (length < 6) return false;
             return (length >= data[5] + 8);
         }
 
-        // ID�`�F�b�N�֐�
+		// ID不正チェック関数
         bool checkId(uint8_t id)
         {
             if (id < 1 || id > 127) return false;
@@ -67,25 +67,25 @@ namespace gs2d
             return (sum & 0xFF);
         }
 
-        // ��M���̃R�[���o�b�N
+		// 受信イベント関数
         void dataReceivedEvent(uint8_t* data, uint8_t length, uint8_t status)
         {
             uint32_t tmp = 0;
 
-            // �G���[�̕ۑ�
+			// エラーステータスを更新
             this->errorBits |= status;
 
             do {
-                // �G���[������ΏI��
+				// エラーがあれば受信を中止
                 if (this->errorBits != 0) break;
 
-                // �`�F�b�N�T�����m�F
+				// チェックサム確認
                 if (data[length - 1] != calculateCheckSum(data, length)) { this->errorBits |= ResponseError; break; }
             } while (false);
 
-            // �G���[���N�����Ă���΋����I��
+			// エラーがあれば強制的に完了処理
             if (this->errorBits != 0) {
-                // �R�[���o�b�N�݂�
+				// コールバックがあれば起動
                 if (this->currentCommand.callback) {
                     CallbackEventArgs e(this->errorBits);
                     this->currentCommand.callback(e);
@@ -96,14 +96,14 @@ namespace gs2d
                 return;
             }
 
-            // Parameter������ΐ؂肾��
+			// パラメータ抽出
             if (length > 8) {
                 for (int i = 0; i < length - 8; i++) {
                     tmp += (data[7 + i] << (i * 8));
                 }
             }
 
-            // �f�[�^���������ďI��
+			// エラーがなければ完了処理
             if (this->currentCommand.responseProcess) {
                 if (this->currentCommand.callback) {
                     CallbackEventArgs e(data[2], this->errorBits, this->currentCommand.responseProcess(tmp));
@@ -133,7 +133,7 @@ namespace gs2d
             uint8_t bufferLength = 8 + length;
             uint8_t* command = new uint8_t[bufferLength];
 
-            // �R�}���h����
+            // ヘッダーを設定
             command[0] = 0xFA; command[1] = 0xAF; command[2] = id;
             command[3] = flag; command[4] = address; command[5] = length;
             command[6] = count;
@@ -146,7 +146,7 @@ namespace gs2d
             // Clear Error
             this->errorBits = 0;
 
-            // �R�}���h���M
+            // コマンド送信
             this->addCommand(command, bufferLength, responseProcess, callback, 0);
             delete[] command;
         }
@@ -156,14 +156,14 @@ namespace gs2d
             uint8_t bufferLength = 8;
             uint8_t* command = new uint8_t[bufferLength];
 
-            // �R�}���h����
+            // ヘッダーをセット
             command[0] = 0xFA; command[1] = 0xAF; command[2] = id;
             command[3] = flag; command[4] = address; command[5] = length;
             command[6] = 0;
 
             command[bufferLength - 1] = calculateCheckSum(command, bufferLength);
 
-            // ��}���`�X���b�h���[�h���̓R�[���o�b�N���g��Ȃ��ꍇ�󂫑҂�
+            // コールバックが無い且つ同期モードの時のみバス待ち
             if (!operatingMode || callback == 0) {
                 while (!this->isTrafficFree.get());
                 this->isReceived.set(false);
@@ -172,14 +172,14 @@ namespace gs2d
             // Clear Error
             this->errorBits = 0;
 
-            // �R�}���h���M
+			// コマンドを送信
             this->addCommand(command, bufferLength, responseProcess, callback, 1);
             delete[] command;
 
-            // �}���`�X���b�h���[�h�ŃR�[���o�b�N������ΔC���ďI��
+			// 不必要なら空データを返す
             if (operatingMode && callback != 0) return EventDataType((int32_t)0);
 
-            // ��M�҂�
+			// 同期モードの時はリスナを起動
             while (!isReceived.get())
             {
                 if (!this->operatingMode) this->listener();
@@ -194,7 +194,7 @@ namespace gs2d
             uint8_t* command = new uint8_t[bufferLength];
             uint8_t pos = 0;
 
-            // �R�}���h����
+            // ヘッダーをセット
             command[pos++] = 0xFA; command[pos++] = 0xAF; command[pos++] = id;
             command[pos++] = flag; command[pos++] = address; command[pos++] = length;
             command[pos++] = count;
@@ -207,7 +207,7 @@ namespace gs2d
             }
             command[pos] = calculateCheckSum(command, bufferLength);
 
-            // ��}���`�X���b�h���[�h���̓R�[���o�b�N���g��Ȃ��ꍇ�󂫑҂�
+            // コールバックが無い且つ同期モードの時のみバス待ち
             if (!operatingMode || callback == 0) {
                 while (!this->isTrafficFree.get());
                 this->isReceived.set(false);
@@ -216,7 +216,7 @@ namespace gs2d
             // Clear Error
             this->errorBits = 0;
 
-            // �R�}���h���M
+			// コマンドを送信
             this->addCommand(command, bufferLength, responseProcess, callback, 0);
             delete[] command;
         }
@@ -243,14 +243,12 @@ namespace gs2d
         // General
         uint32_t readMemory(uint8_t id, uint16_t address, uint8_t length, CallbackType callback)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, address, 0x0F, length, 0, callback);
         }
         void writeMemory(uint8_t id, uint16_t address, uint32_t data, uint8_t length)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             setFunction(id, address, data, length, 0, 0);
@@ -259,7 +257,6 @@ namespace gs2d
         // Ping
         uint16_t ping(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, Address::ModelNumber, 0x0F, 2, 0, callback);
@@ -268,14 +265,12 @@ namespace gs2d
         // Torque
         uint8_t readTorqueEnable(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, Address::TorqueEnable, 0x0F, 1, 0, callback);
         }
         void writeTorqueEnable(uint8_t id, uint8_t torque)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             setFunction(id, Address::TorqueEnable, torque, 1);
@@ -284,7 +279,6 @@ namespace gs2d
         // Temperature
         uint16_t readTemperature(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, Address::Temperature, 0x0F, 2, 0, callback);
@@ -293,7 +287,6 @@ namespace gs2d
         // Current
         int32_t readCurrent(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, Address::Current, 0x0F, 2, 0, callback);
@@ -302,7 +295,6 @@ namespace gs2d
         // Voltage
         gFloat readVoltage(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (gFloat)getFunction(id, Address::Voltage, 0x0F, 2, voltageProcess, callback);
@@ -311,14 +303,12 @@ namespace gs2d
         // Target Position
         gFloat readTargetPosition(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (gFloat)getFunction(id, Address::TargetPosition, 0x0F, 2, positionProcess, callback);
         }
         void writeTargetPosition(uint8_t id, gFloat position)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             if (position < -150) position = -150;
@@ -332,7 +322,6 @@ namespace gs2d
         // Current Position
         gFloat readCurrentPosition(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (gFloat)getFunction(id, Address::CurrentPosition, 0x0F, 2, positionProcess, callback);
@@ -349,14 +338,12 @@ namespace gs2d
         // Target Time
         gFloat readTargetTime(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (gFloat)getFunction(id, Address::TargetTime, 0x0F, 2, targetTimeProcess, callback);
         }
         void writeTargetTime(uint8_t id, gFloat targetTime)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             if (targetTime < 0) targetTime = 0;
@@ -374,14 +361,12 @@ namespace gs2d
         // P Gain
         uint32_t readPGain(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, Address::PGain, 0x0F, 1, 0, callback);
         }
         void writePGain(uint8_t id, uint32_t gain)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             if (gain < 1) gain = 1;
@@ -401,14 +386,12 @@ namespace gs2d
         // Max Torque
         uint32_t readMaxTorque(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, Address::MaxTorque, 0x0F, 1, 0, callback);
         }
         void writeMaxTorque(uint8_t id, uint32_t maxTorque)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             if (maxTorque < 1) maxTorque = 1;
@@ -420,7 +403,6 @@ namespace gs2d
         // Speed
         gFloat readSpeed(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (gFloat)getFunction(id, Address::CurrentSpeed, 0x0F, 2, speedCallback, callback);
@@ -430,14 +412,12 @@ namespace gs2d
         // ID
         uint32_t readID(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, Address::Id, 0x0F, 1, 0, callback);
         }
         void writeID(uint8_t id, uint32_t newid)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
             if (!checkId(newid)) { badInput(); return; }
 
@@ -447,7 +427,6 @@ namespace gs2d
         // ROM
         void saveRom(uint8_t id)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             setFunction(id, Address::WriteFlashRom, 0, 0, 0, 0, 0x40, 0);
@@ -455,7 +434,6 @@ namespace gs2d
         void loadRom(uint8_t id) { notSupport(); }
         void resetMemory(uint8_t id)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             setFunction(id, Address::ResetMemory, 0, 0, 0, 0, 0x10, 0);
@@ -464,14 +442,12 @@ namespace gs2d
         // Baudrate
         uint32_t readBaudrate(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, Address::Baudrate, 0x0F, 1, baudrateProcess, callback);
         }
         void writeBaudrate(uint8_t id, uint32_t baudrate)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             int32_t baudrateList[10]{ 9600, 14400, 19200, 28800, 38400, 57600, 76800, 115200, 153600, 230400 };
@@ -488,14 +464,12 @@ namespace gs2d
         // CW Limit Position
         gFloat readLimitCWPosition(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (gFloat)getFunction(id, Address::CWLimit, 0x0F, 2, positionProcess, callback);
         }
         void writeLimitCWPosition(uint8_t id, gFloat limitPosition)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             if (limitPosition < -150 || limitPosition > 0) { badInput(); return; }
@@ -508,14 +482,12 @@ namespace gs2d
         // CCW Limit Position
         gFloat readLimitCCWPosition(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (gFloat)getFunction(id, Address::CCWLimit, 0x0F, 2, positionProcess, callback);
         }
         void writeLimitCCWPosition(uint8_t id, gFloat limitPosition)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return; }
 
             if (limitPosition > 150 || limitPosition < 0) { badInput(); return; }
@@ -528,7 +500,6 @@ namespace gs2d
         // Temperature Limit
         uint32_t readLimitTemperature(uint8_t id, CallbackType callback = 0)
         {
-            // ID �`�F�b�N
             if (!checkId(id)) { badInput(); return 0; }
 
             return (int32_t)getFunction(id, Address::TemperatureLimit, 0x0F, 2, 0, callback);
