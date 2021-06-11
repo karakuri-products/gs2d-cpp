@@ -776,6 +776,8 @@ namespace gs2d
 			}
 
 			getFunction(0xFE, Instructions::SyncWrite, param, 4 + count * 5, 0, defaultWriteCallback, 0);
+			delete[] dataList;
+			delete[] param;
 		}
 	};
 
