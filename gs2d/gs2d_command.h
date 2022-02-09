@@ -1,4 +1,4 @@
-﻿/*
+/*
 * @file    gs2d_command.h
 * @author
 * @date    2021/01/26
