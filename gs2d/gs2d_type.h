@@ -1,4 +1,4 @@
-/*
+﻿/*
 * @file    gs2d_buffer.h
 * @author
 * @date    2021/01/26
@@ -7,7 +7,7 @@
 * マルチスレッド処理を行った際、データ入出力にエラーが起こる場合は
 * 以下のクラスを環境向けにスレッドセーフに組み直す必要があるかも知れません。
 * CircularBuffer, ThreadSafeType
-* 
+*
 */
 #pragma once
 
@@ -20,13 +20,14 @@ namespace gs2d
 	enum {
 		TimeoutError = 0x01,
 		ResponseError = 0x02,
+		ProtocolError = 0x04,
 		NotSupportError = 0x00,
 		BadInputError = 0x08,
 		SystemError = 0x10
 	};
 
-/* Classes -------------------------------------------------------------------*/
-	// gs2dで扱う浮動小数点の型
+	/* Classes -------------------------------------------------------------------*/
+		// gs2dで扱う浮動小数点の型
 	using gFloat = float;
 
 	// Int, Floatの戻り地に対応するためのクラス

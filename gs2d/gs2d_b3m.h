@@ -1,4 +1,4 @@
-/*
+﻿/*
 * @file    gs2d_b3m.h
 * @author
 * @date    2021/01/26
@@ -87,7 +87,7 @@ namespace gs2d
 
 			// エラーステータスを更新
 			this->errorBits |= status;
-			
+
 			do {
 				// エラーがあれば受信を中止
 				if (this->errorBits != 0) break;
@@ -173,7 +173,7 @@ namespace gs2d
 
 			// コマンドを送信
 			this->addCommand(command, bufferLength, responseProcess, callback, count);
-			delete [] command;
+			delete[] command;
 
 			// 不必要なら空データを返す
 			if (operatingMode && callback != 0 || count == 0) return EventDataType((int32_t)0);
@@ -219,7 +219,7 @@ namespace gs2d
 		}
 		void writeMemory(uint8_t id, uint16_t address, uint32_t data, uint8_t length)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint8_t param[6];
 			for (uint8_t i = 0; i < length; i++) param[i] = (data >> (i * 8)) & 0xFF;
@@ -250,7 +250,7 @@ namespace gs2d
 		}
 		void writeTorqueEnable(uint8_t id, uint8_t torque)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint8_t param[3]{ (torque) ? 0b00 : 0b10, Address::Mode, 1 };
 
@@ -298,7 +298,7 @@ namespace gs2d
 		}
 		void writeTargetPosition(uint8_t id, gFloat position)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint16_t pos = (position * -100);
 
@@ -328,7 +328,7 @@ namespace gs2d
 		}
 		void writeOffset(uint8_t id, gFloat offset)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			int16_t pos = (offset * -100);
 
@@ -348,7 +348,7 @@ namespace gs2d
 		}
 		void writeDeadband(uint8_t id, gFloat deadband)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint16_t pos = (deadband * 100);
 
@@ -368,7 +368,7 @@ namespace gs2d
 		}
 		void writeTargetTime(uint8_t id, gFloat targetTime)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint16_t time = (targetTime * 1000);
 
@@ -392,7 +392,7 @@ namespace gs2d
 		}
 		void writePGain(uint8_t id, uint32_t gain)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint8_t param[6]{ gain & 0xFF, (gain >> 8) & 0xFF, (gain >> 16) & 0xFF, (gain >> 24) & 0xFF, Address::PGain, 1 };
 
@@ -410,7 +410,7 @@ namespace gs2d
 		}
 		void writeIGain(uint8_t id, uint32_t gain)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint8_t param[6]{ gain & 0xFF, (gain >> 8) & 0xFF, (gain >> 16) & 0xFF, (gain >> 24) & 0xFF, Address::IGain, 1 };
 
@@ -428,7 +428,7 @@ namespace gs2d
 		}
 		void writeDGain(uint8_t id, uint32_t gain)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint8_t param[6]{ gain & 0xFF, (gain >> 8) & 0xFF, (gain >> 16) & 0xFF, (gain >> 24) & 0xFF, Address::DGain, 1 };
 
@@ -450,7 +450,7 @@ namespace gs2d
 		}
 		void writeSpeed(uint8_t id, gFloat speed)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			int speedInt = speed * 100;
 
@@ -470,8 +470,8 @@ namespace gs2d
 		}
 		void writeID(uint8_t id, uint32_t newid)
 		{
-			if (!checkId(id)) { badInput(); return ; }
-			if (!checkId(newid)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
+			if (!checkId(newid)) { badInput(); return; }
 
 			uint8_t param[6]{ newid, Address::Id, 1 };
 
@@ -481,18 +481,18 @@ namespace gs2d
 		// ROM
 		void saveRom(uint8_t id)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			getFunction(id, Instructions::Save, 0, 0, 0, defaultWriteCallback);
 		}
 		void loadRom(uint8_t id)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			getFunction(id, Instructions::Load, 0, 0, 0, defaultWriteCallback);
 		}
 
-		void resetMemory(uint8_t id) { notSupport(); return ; }
+		void resetMemory(uint8_t id) { notSupport(); return; }
 
 		// Baudrate
 		uint32_t readBaudrate(uint8_t id, CallbackType callback = 0)
@@ -505,7 +505,7 @@ namespace gs2d
 		}
 		void writeBaudrate(uint8_t id, uint32_t baudrate)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint8_t param[6]{ baudrate & 0xFF, (baudrate >> 8) & 0xFF, (baudrate >> 16) & 0xFF, (baudrate >> 24) & 0xFF, Address::Baudrate, 1 };
 
@@ -523,7 +523,7 @@ namespace gs2d
 		}
 		void writeLimitCWPosition(uint8_t id, gFloat limitPosition)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint16_t limitInt = (-limitPosition * 100.0);
 
@@ -543,7 +543,7 @@ namespace gs2d
 		}
 		void writeLimitCCWPosition(uint8_t id, gFloat limitPosition)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint16_t limitInt = -limitPosition * 100.0;
 
@@ -563,7 +563,7 @@ namespace gs2d
 		}
 		void writeLimitTemperature(uint8_t id, uint32_t temperature)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			int limitInt = temperature * 100.0;
 
@@ -583,7 +583,7 @@ namespace gs2d
 		}
 		void writeLimitCurrent(uint8_t id, uint32_t current)
 		{
-			if (!checkId(id)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint16_t limitInt = current;
 
@@ -614,12 +614,12 @@ namespace gs2d
 		void burstReadMemory(uint8_t* idList, uint8_t count, uint16_t address, uint8_t length, CallbackType callback) { notSupport(); }
 		void burstWriteMemory(uint8_t* idList, uint32_t* dataList, uint8_t count, uint16_t address, uint8_t length)
 		{
-			uint8_t* param = new uint8_t[(length + 1) * (count) + 1];
+			uint8_t* param = new uint8_t[(length + 1) * (count)+1];
 			uint8_t pos = 0;
 
 			for (int i = 0; i < count; i++) {
 				if (i != 0) param[pos++] = idList[i];
-				
+
 				for (int k = 0; k < length; k++) {
 					param[pos++] = (dataList[i] >> (k * 8)) & 0xFF;
 				}
@@ -628,7 +628,7 @@ namespace gs2d
 			param[pos++] = address;
 			param[pos] = count;
 
-			getFunction(idList[0], Instructions::Write, param, (length + 1) * (count) + 1, 0, 0, (count == 1) ? 1 : 0);
+			getFunction(idList[0], Instructions::Write, param, (length + 1) * (count)+1, 0, 0, (count == 1) ? 1 : 0);
 			delete[] param;
 		}
 
@@ -636,7 +636,7 @@ namespace gs2d
 		void burstReadPositions(uint8_t* idList, uint8_t count, CallbackType callback) { notSupport(); }
 		void burstWriteTargetPositions(uint8_t* idList, gFloat* positionList, uint8_t count)
 		{
-			uint8_t* param = new uint8_t[3 * (count) + 1];
+			uint8_t* param = new uint8_t[3 * (count)+1];
 			uint8_t pos = 0;
 
 			for (int i = 0; i < count; i++) {
@@ -650,8 +650,8 @@ namespace gs2d
 			param[pos++] = Address::TargetPosition;
 			param[pos] = count;
 
-			getFunction(idList[0], Instructions::Write, param, 3 * (count) + 1, 0, 0, (count == 1) ? 1 : 0);
+			getFunction(idList[0], Instructions::Write, param, 3 * (count)+1, 0, 0, (count == 1) ? 1 : 0);
 			delete[] param;
 		}
-    };
+	};
 }

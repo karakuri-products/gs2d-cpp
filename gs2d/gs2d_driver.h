@@ -1,4 +1,4 @@
-/*
+﻿/*
 * @file    gs2d_driver.h
 * @author
 * @date    2021/01/26
@@ -20,8 +20,8 @@ namespace gs2d
 		// エラーコード保存用（例外発生はしない）
 		uint8_t errorBits = 0;
 		void notSupport(void) { errorBits |= NotSupportError; }
-		void badInput(void) { 
-			errorBits |= BadInputError; 
+		void badInput(void) {
+			errorBits |= BadInputError;
 		}
 
 		// 同期/非同期モードのフラグ
@@ -72,7 +72,7 @@ namespace gs2d
 		// Offset
 		virtual gFloat readOffset(uint8_t id, CallbackType callback = 0) = 0;
 		virtual void writeOffset(uint8_t id, gFloat offset) = 0;
-		
+
 		// Deadband
 		virtual gFloat readDeadband(uint8_t id, CallbackType callback = 0) = 0;
 		virtual void writeDeadband(uint8_t id, gFloat deadband) = 0;
@@ -104,7 +104,7 @@ namespace gs2d
 		// Speed
 		virtual gFloat readSpeed(uint8_t id, CallbackType callback = 0) = 0;
 		virtual void writeSpeed(uint8_t id, gFloat speed) = 0;
-		
+
 		// ID
 		virtual uint32_t readID(uint8_t id, CallbackType callback = 0) = 0;
 		virtual void writeID(uint8_t id, uint32_t newid) = 0;

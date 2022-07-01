@@ -1,8 +1,8 @@
-/*
+﻿/*
 * @file    gs2d_command.h
 * @author
 * @date    2021/01/26
-* @brief   
+* @brief
 */
 #pragma once
 
@@ -24,7 +24,7 @@ namespace gs2d
 		ResponseProcess responseProcess;
 		CallbackType callback;
 
-		CommandBufferType(uint8_t *data, uint8_t length, uint8_t count = 1, ResponseProcess response = 0, CallbackType callback = 0)
+		CommandBufferType(uint8_t* data, uint8_t length, uint8_t count = 1, ResponseProcess response = 0, CallbackType callback = 0)
 		{
 			memcpy(this->data, data, length);
 			this->length = length;
@@ -65,7 +65,7 @@ namespace gs2d
 		uint64_t startTime = 0;
 
 		//
-		CommandHandler() : isTrafficFree(true), currentCommand(){ serialPort.open(); }
+		CommandHandler() : isTrafficFree(true), currentCommand() { serialPort.open(); }
 		virtual ~CommandHandler() { serialPort.close(); }
 
 		// コマンド追加関数
@@ -82,7 +82,7 @@ namespace gs2d
 			// コマンドを取り出して送信
 			currentCommand = commandStack.pop();
 			serialPort.write(currentCommand.data, currentCommand.length);
-			
+
 			// リスナ初期化
 			// 受信個数が0個でも無視
 			if (currentCommand.count == 0) {
@@ -106,7 +106,7 @@ namespace gs2d
 			if (serialPort.isConnected())
 			{
 				// タイムアウト確認
-				if (serialPort.time() > startTime + receiveTimeout) 
+				if (serialPort.time() > startTime + receiveTimeout)
 				{
 					// タイムアウトを通知
 					dataReceivedEvent(0, 0, TimeoutError);
@@ -114,7 +114,7 @@ namespace gs2d
 					// コマンドがたまっている場合は送信
 					if (!commandStack.isEmpty()) sendCommand();
 					else isTrafficFree.set(true);
-					
+
 					return;
 				}
 
@@ -139,7 +139,8 @@ namespace gs2d
 						// コマンドがたまっている場合は送信
 						if (!commandStack.isEmpty()) sendCommand();
 						else isTrafficFree.set(true);
-					} else {
+					}
+					else {
 						responsePos = 0;
 					}
 				}

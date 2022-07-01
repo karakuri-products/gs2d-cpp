@@ -1,4 +1,4 @@
-/*
+﻿/*
 * @file    gs2d_krs.h
 * @author
 * @date    2021/01/31
@@ -64,18 +64,18 @@ namespace gs2d
 			// ヘッダの値からデータ長を判定
 			switch (header)
 			{
-			case 0: 
+			case 0:
 			case 4:
 				return (length >= 3);
-			case 1: 
+			case 1:
 				if (length < 2) return false;
-				switch (data[1]) 
+				switch (data[1])
 				{
 				case 0: return (length >= 66);
 				case 5: return (length >= 4);
 				default: return (length >= 3);
 				}
-			case 2: 
+			case 2:
 				if (length < 2) return false;
 				switch (data[1])
 				{
@@ -164,7 +164,7 @@ namespace gs2d
 		}
 
 		EventDataType getFunction(uint8_t* command, uint8_t length, ResponseProcess responseProcess = 0, CallbackType callback = 0, KRSTarget target = { 0, 0 })
-		{			
+		{
 			// コールバックが無い且つ同期モードの時のみバス待ち
 			if (!operatingMode || callback == 0) {
 				while (!this->isTrafficFree.get());
@@ -195,7 +195,7 @@ namespace gs2d
 		static EventDataType temperatureProcess(int32_t data) { return EventDataType((int32_t)(100 - (data - 30) / 1.425)); }
 		static EventDataType currentProcess(int32_t data) { return EventDataType((int32_t)((data < 63) ? data * 100 : (data - 64) * 100)); }
 		static EventDataType positionProcess(int32_t data) { return EventDataType((gFloat)((7500 - data) / 29.629)); }
-		static EventDataType baudrateProcess(int32_t data) 
+		static EventDataType baudrateProcess(int32_t data)
 		{
 			switch (data)
 			{
@@ -351,7 +351,7 @@ namespace gs2d
 		}
 		void writePGain(uint8_t id, uint32_t gain)
 		{
-			uint8_t command[3] = { (0b11000000 | id), 1, 0};
+			uint8_t command[3] = { (0b11000000 | id), 1, 0 };
 
 			if (!checkId(id)) { badInput(); return; }
 
@@ -411,8 +411,8 @@ namespace gs2d
 		{
 			uint8_t command[4]{ 0b11100000, 1, 1, 1 };
 
-			if (!checkId(id)) { badInput(); return ; }
-			if (!checkId(newid)) { badInput(); return ; }
+			if (!checkId(id)) { badInput(); return; }
+			if (!checkId(newid)) { badInput(); return; }
 
 			command[0] += newid;
 

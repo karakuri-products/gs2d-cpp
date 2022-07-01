@@ -1,4 +1,4 @@
-/*
+﻿/*
 * @file    gs2d_robotis.h
 * @author
 * @date    2021/01/26
@@ -102,7 +102,7 @@ namespace gs2d
 				if (length != paramLength + 7) { this->errorBits |= ResponseError; break; }
 
 				// Errorバイトを確認
-				if (data[8] != 0) { this->errorBits |= ResponseError; break; }
+				if (data[8] != 0) { this->errorBits |= ProtocolError; break; }
 
 				// CheckSum検証
 				uint16_t crc = data[length - 2] + (data[length - 1] << 8);
@@ -114,7 +114,7 @@ namespace gs2d
 				if (this->currentCommand.callback) {
 					CallbackEventArgs e(this->errorBits);
 					this->currentCommand.callback(e);
-					if(operatingMode) return;
+					if (operatingMode) return;
 				}
 				responseData.set((int32_t)0);
 				isReceived.set(true);
@@ -134,7 +134,7 @@ namespace gs2d
 				if (this->currentCommand.callback) {
 					CallbackEventArgs e(data[4], this->errorBits, this->currentCommand.responseProcess(tmp));
 					this->currentCommand.callback(e);
-					if(!operatingMode) isReceived.set(true);
+					if (!operatingMode) isReceived.set(true);
 				}
 				else {
 					responseData = (this->currentCommand.responseProcess(tmp));
@@ -145,7 +145,7 @@ namespace gs2d
 				if (this->currentCommand.callback) {
 					CallbackEventArgs e(data[4], this->errorBits, (int32_t)tmp);
 					this->currentCommand.callback(e);
-					if(!operatingMode) isReceived.set(true);
+					if (!operatingMode) isReceived.set(true);
 				}
 				else {
 					responseData.set((int32_t)tmp);
@@ -183,12 +183,12 @@ namespace gs2d
 			// Length設定
 			command[5] = ((length + 3) & 0xFF);
 			command[6] = (((length + 3) >> 8) & 0xFF);
-			
+
 			// Instruction設定
 			command[7] = instruction;
 
 			// Parameters
-			if(length) memcpy(command + 8, param, length);
+			if (length) memcpy(command + 8, param, length);
 
 			// CheckSum設定
 			uint16_t crc = crc16::calculate(command, bufferLength - 2);
@@ -206,7 +206,7 @@ namespace gs2d
 
 			// 送信
 			this->addCommand(command, bufferLength, responseProcess, callback, count);
-			delete [] command;
+			delete[] command;
 
 			// 不必要なら空データを返す
 			if (operatingMode && callback != 0 || count == 0) return EventDataType((int32_t)0);
@@ -234,7 +234,7 @@ namespace gs2d
 		static EventDataType offsetProcess(int32_t data) { return EventDataType((gFloat)(data * 0.088)); }
 		static EventDataType targetTimeProcess(int32_t data) { return EventDataType((gFloat)(data / 1000.0)); }
 		static EventDataType speedProcess(int32_t data) { return EventDataType((gFloat)(data * 0.229 * 6)); }
-		static EventDataType baudrateProcess(int32_t data) 
+		static EventDataType baudrateProcess(int32_t data)
 		{
 			int32_t baudrateList[8]{ 9600, 57600, 115200, 1000000, 2000000, 3000000, 4000000, 4500000 };
 			if (data > 7) return EventDataType((int32_t)0);
@@ -249,7 +249,7 @@ namespace gs2d
 		// General
 		uint32_t readMemory(uint8_t id, uint16_t address, uint8_t length, CallbackType callback)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t paramLength = generateParameters(address, length, 2, param);
@@ -269,7 +269,7 @@ namespace gs2d
 		// Ping
 		uint16_t ping(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			return (int32_t)getFunction(id, Instructions::Ping, 0, 0, pingProcess, callback);
 		}
@@ -277,7 +277,7 @@ namespace gs2d
 		// Torque
 		uint8_t readTorqueEnable(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::TorqueEnable, 1, 2, param);
@@ -286,7 +286,7 @@ namespace gs2d
 		}
 		void writeTorqueEnable(uint8_t id, uint8_t torque)
 		{
-			if (!checkId(id)){ badInput(); return; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::TorqueEnable, torque, 1, param);
@@ -297,7 +297,7 @@ namespace gs2d
 		// Temperature
 		uint16_t readTemperature(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentTemperature, 1, 2, param);
@@ -308,7 +308,7 @@ namespace gs2d
 		// Current
 		int32_t readCurrent(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentCurrent, 2, 2, param);
@@ -319,7 +319,7 @@ namespace gs2d
 		// Voltage
 		gFloat readVoltage(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentVoltage, 2, 2, param);
@@ -330,7 +330,7 @@ namespace gs2d
 		// Target Position
 		gFloat readTargetPosition(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::GoalPosition, 4, 2, param);
@@ -340,7 +340,7 @@ namespace gs2d
 
 		void writeTargetPosition(uint8_t id, gFloat position)
 		{
-			if (!checkId(id)){ badInput(); return; }
+			if (!checkId(id)) { badInput(); return; }
 
 			if (position > 180.0) position = 180.0;
 			else if (position < -180.0) position = -180.0;
@@ -354,7 +354,7 @@ namespace gs2d
 		// Current Position
 		gFloat readCurrentPosition(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentPosition, 4, 2, param);
@@ -365,7 +365,7 @@ namespace gs2d
 		// Offset
 		gFloat readOffset(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::HomingOffset, 4, 2, param);
@@ -374,7 +374,7 @@ namespace gs2d
 		}
 		void writeOffset(uint8_t id, gFloat offset)
 		{
-			if (!checkId(id)){ badInput(); return; }
+			if (!checkId(id)) { badInput(); return; }
 
 			offset /= 0.088;
 
@@ -394,7 +394,7 @@ namespace gs2d
 		// Target Time
 		gFloat readTargetTime(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::ProfileVelocity, 4, 2, param);
@@ -403,7 +403,7 @@ namespace gs2d
 		}
 		void writeTargetTime(uint8_t id, gFloat targetTime)
 		{
-			if (!checkId(id)){ badInput(); return; }
+			if (!checkId(id)) { badInput(); return; }
 
 			if (targetTime < 0) targetTime = 0;
 			else if (targetTime > 32.737) targetTime = 32.737;
@@ -419,7 +419,7 @@ namespace gs2d
 		// Accel Time
 		gFloat readAccelTime(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::ProfileAcceleration, 4, 2, param);
@@ -428,7 +428,7 @@ namespace gs2d
 		}
 		void writeAccelTime(uint8_t id, gFloat accelTime)
 		{
-			if (!checkId(id)){ badInput(); return; }
+			if (!checkId(id)) { badInput(); return; }
 
 			if (accelTime < 0) accelTime = 0;
 			else if (accelTime > 32.737) accelTime = 32.737;
@@ -444,7 +444,7 @@ namespace gs2d
 		// P Gain
 		uint32_t readPGain(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PositionPGain, 2, 2, param);
@@ -453,7 +453,7 @@ namespace gs2d
 		}
 		void writePGain(uint8_t id, uint32_t gain)
 		{
-			if (!checkId(id)){ badInput(); return; }
+			if (!checkId(id)) { badInput(); return; }
 
 			if (gain < 0) gain = 0;
 			else if (gain > 16383) gain = 16383;
@@ -467,7 +467,7 @@ namespace gs2d
 		// I Gain
 		uint32_t readIGain(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PositionIGain, 2, 2, param);
@@ -476,7 +476,7 @@ namespace gs2d
 		}
 		void writeIGain(uint8_t id, uint32_t gain)
 		{
-			if (!checkId(id)){ badInput(); return; }
+			if (!checkId(id)) { badInput(); return; }
 
 			if (gain < 0) gain = 0;
 			else if (gain > 16383) gain = 16383;
@@ -490,7 +490,7 @@ namespace gs2d
 		// D Gain
 		uint32_t readDGain(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PositionDGain, 2, 2, param);
@@ -499,7 +499,7 @@ namespace gs2d
 		}
 		void writeDGain(uint8_t id, uint32_t gain)
 		{
-			if (!checkId(id)){ badInput(); return; }
+			if (!checkId(id)) { badInput(); return; }
 
 			if (gain < 0) gain = 0;
 			else if (gain > 16383) gain = 16383;
@@ -517,7 +517,7 @@ namespace gs2d
 		// Speed
 		gFloat readSpeed(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentVelocity, 4, 2, param);
@@ -526,7 +526,7 @@ namespace gs2d
 		}
 		void writeSpeed(uint8_t id, gFloat speed)
 		{
-			if (!checkId(id)){ badInput(); return; }
+			if (!checkId(id)) { badInput(); return; }
 
 			uint32_t rev_min = (int)(speed / 0.229 / 6.0);
 			if (rev_min < 0) rev_min = 0;
@@ -541,7 +541,7 @@ namespace gs2d
 		// ID
 		uint32_t readID(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::Id, 1, 2, param);
@@ -565,16 +565,16 @@ namespace gs2d
 		// ROM
 		void saveRom(uint8_t id) { notSupport(); }
 		void loadRom(uint8_t id) { notSupport(); }
-		void resetMemory(uint8_t id) 
-		{ 
+		void resetMemory(uint8_t id)
+		{
 			uint8_t param[1] = { 0x02 };
-			getFunction(id, Instructions::FactoryReset, param, 1); 
+			getFunction(id, Instructions::FactoryReset, param, 1);
 		}
 
 		// Baudrate
 		uint32_t readBaudrate(uint8_t id, CallbackType callback = 0)
 		{
-			if (!checkId(id)){ badInput(); return 0; }
+			if (!checkId(id)) { badInput(); return 0; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::Baudrate, 1, 2, param);
@@ -677,7 +677,7 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return; }
 
-			if(current < 0 || current > 3210) { badInput(); return; }
+			if (current < 0 || current > 3210) { badInput(); return; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::CurrentLimit, (uint32_t)(current / 2.69), 2, param);
@@ -718,7 +718,7 @@ namespace gs2d
 			for (uint8_t i = 0; i < count; i++) param[4 + i] = idList[i];
 
 			getFunction(0xFE, Instructions::SyncRead, param, count + 4, 0, callback, count);
-			delete  [] param;
+			delete[] param;
 		}
 		void burstWriteMemory(uint8_t* idList, uint32_t* dataList, uint8_t count, uint16_t address, uint8_t length)
 		{
@@ -737,7 +737,7 @@ namespace gs2d
 			}
 
 			getFunction(0xFE, Instructions::SyncWrite, param, 4 + count * (length + 1), 0, defaultWriteCallback, 0);
-			delete  [] param;
+			delete[] param;
 		}
 
 		// Burst Function(Position)
@@ -751,7 +751,7 @@ namespace gs2d
 			for (uint8_t i = 0; i < count; i++) param[4 + i] = idList[i];
 
 			getFunction(0xFE, Instructions::SyncRead, param, count + 4, targetPositionProcess, callback, count);
-			delete  [] param;
+			delete[] param;
 		}
 		void burstWriteTargetPositions(uint8_t* idList, gFloat* positionList, uint8_t count)
 		{

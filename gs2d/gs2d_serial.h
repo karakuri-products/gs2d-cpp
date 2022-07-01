@@ -1,4 +1,4 @@
-/*
+﻿/*
 * @file    gs2d_serial.h
 * @author
 * @date    2021/01/26

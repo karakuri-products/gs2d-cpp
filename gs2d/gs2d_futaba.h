@@ -1,4 +1,4 @@
-/*
+﻿/*
 * @file    gs2d_futaba.h
 * @author
 * @date    2021/01/30
@@ -14,11 +14,11 @@
 /* Variables -----------------------------------------------------------------*/
 namespace gs2d
 {
-	template<class SerialClass, unsigned int bufferSize = 20, unsigned int commandSize = 50>
+    template<class SerialClass, unsigned int bufferSize = 20, unsigned int commandSize = 50>
     class Futaba : public CommandHandler<SerialClass, bufferSize, commandSize>, public Driver
     {
     private:
-		// 受信データバッファ
+        // 受信データバッファ
         EventDataType responseData;
         Gs2dType<bool> isReceived;
 
@@ -45,14 +45,14 @@ namespace gs2d
             static const uint8_t ResetMemory = 0xFF;
         };
 
-		// 受信完了チェック関数
+        // 受信完了チェック関数
         bool isComplete(uint8_t* data, uint8_t length)
         {
             if (length < 6) return false;
             return (length >= data[5] + 8);
         }
 
-		// ID不正チェック関数
+        // ID不正チェック関数
         bool checkId(uint8_t id)
         {
             if (id < 1 || id > 127) return false;
@@ -67,25 +67,25 @@ namespace gs2d
             return (sum & 0xFF);
         }
 
-		// 受信イベント関数
+        // 受信イベント関数
         void dataReceivedEvent(uint8_t* data, uint8_t length, uint8_t status)
         {
             uint32_t tmp = 0;
 
-			// エラーステータスを更新
+            // エラーステータスを更新
             this->errorBits |= status;
 
             do {
-				// エラーがあれば受信を中止
+                // エラーがあれば受信を中止
                 if (this->errorBits != 0) break;
 
-				// チェックサム確認
+                // チェックサム確認
                 if (data[length - 1] != calculateCheckSum(data, length)) { this->errorBits |= ResponseError; break; }
             } while (false);
 
-			// エラーがあれば強制的に完了処理
+            // エラーがあれば強制的に完了処理
             if (this->errorBits != 0) {
-				// コールバックがあれば起動
+                // コールバックがあれば起動
                 if (this->currentCommand.callback) {
                     CallbackEventArgs e(this->errorBits);
                     this->currentCommand.callback(e);
@@ -96,14 +96,14 @@ namespace gs2d
                 return;
             }
 
-			// パラメータ抽出
+            // パラメータ抽出
             if (length > 8) {
                 for (int i = 0; i < length - 8; i++) {
                     tmp += (data[7 + i] << (i * 8));
                 }
             }
 
-			// エラーがなければ完了処理
+            // エラーがなければ完了処理
             if (this->currentCommand.responseProcess) {
                 if (this->currentCommand.callback) {
                     CallbackEventArgs e(data[2], this->errorBits, this->currentCommand.responseProcess(tmp));
@@ -172,14 +172,14 @@ namespace gs2d
             // Clear Error
             this->errorBits = 0;
 
-			// コマンドを送信
+            // コマンドを送信
             this->addCommand(command, bufferLength, responseProcess, callback, 1);
             delete[] command;
 
-			// 不必要なら空データを返す
+            // 不必要なら空データを返す
             if (operatingMode && callback != 0) return EventDataType((int32_t)0);
 
-			// 同期モードの時はリスナを起動
+            // 同期モードの時はリスナを起動
             while (!isReceived.get())
             {
                 if (!this->operatingMode) this->listener();
@@ -216,7 +216,7 @@ namespace gs2d
             // Clear Error
             this->errorBits = 0;
 
-			// コマンドを送信
+            // コマンドを送信
             this->addCommand(command, bufferLength, responseProcess, callback, 0);
             delete[] command;
         }
@@ -525,7 +525,7 @@ namespace gs2d
         void burstReadPositions(uint8_t* idList, uint8_t count, CallbackType callback) { notSupport(); }
         void burstWriteTargetPositions(uint8_t* idList, gFloat* positionList, uint8_t count)
         {
-            uint32_t *positionListInt = new uint32_t[count];
+            uint32_t* positionListInt = new uint32_t[count];
             for (uint8_t i = 0; i < count; i++)
             {
                 checkId(idList[i]);
