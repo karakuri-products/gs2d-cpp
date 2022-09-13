@@ -14,7 +14,7 @@
 /* Variables -----------------------------------------------------------------*/
 namespace gs2d
 {
-	template<class SerialClass, unsigned int bufferSize = 20, unsigned int commandSize = 50>
+	template<class SerialClass, unsigned int bufferSize = 2, unsigned int commandSize = 50>
 	class RobotisP20 : public CommandHandler<SerialClass, bufferSize, commandSize>, public Driver
 	{
 	private:

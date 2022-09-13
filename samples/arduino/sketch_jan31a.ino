@@ -13,10 +13,10 @@ void setup()
   Serial.println("Hello World 2");
   delay(1000);
   
-//  Driver* servo = new RobotisP20<ArduinoSerial, 3, 30>();
+//  Driver* servo = new RobotisP20<ArduinoSerial>();
 //  Driver* servo = new B3M<ArduinoSerial>();
 //  Driver* servo = new Futaba<ArduinoSerial>();
-  Driver* servo = new KRS<ArduinoSerial, 3, 70>();
+  Driver* servo = new KRS<ArduinoSerial>();
 
   Serial.println("Target Positon");
   servo->writeTargetPosition(1, 90.0);
