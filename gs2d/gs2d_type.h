@@ -1,5 +1,5 @@
 ﻿/*
-* @file    gs2d_buffer.h
+* @file    gs2d_type.h
 * @author
 * @date    2021/01/26
 * @brief
