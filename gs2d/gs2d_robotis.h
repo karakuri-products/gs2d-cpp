@@ -62,6 +62,9 @@ namespace gs2d
 			static const uint8_t PresentPosition = 132;
 			static const uint8_t PresentVoltage = 144;
 			static const uint8_t PresentTemperature = 146;
+
+			static const uint8_t GoalCurrent = 102;
+			static const uint8_t OperatingMode = 11;
 		};
 
 		// 受信完了チェック関数
@@ -284,12 +287,23 @@ namespace gs2d
 
 			return (int32_t)getFunction(id, Instructions::Read, param, length, readTorqueProcess, callback);
 		}
+		
 		void writeTorqueEnable(uint8_t id, uint8_t torque)
 		{
 			if (!checkId(id)) { badInput(); return; }
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::TorqueEnable, torque, 1, param);
+
+			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
+		}
+
+		void writeOperatingMode(uint8_t id, uint8_t mode)
+		{
+			if (!checkId(id)) { badInput(); return; }
+
+			uint8_t param[6];
+			uint8_t length = generateParameters(Address::OperatingMode, mode, 1, param);
 
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
@@ -347,6 +361,18 @@ namespace gs2d
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::GoalPosition, (uint32_t)((position + 180.0) * 4096.0 / 360.0), 4, param);
+
+			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
+		}
+
+		void writeGoalCurrent(uint8_t id, gFloat current)
+		{
+			if (!checkId(id)) { badInput(); return; }
+
+			if (position < 0.0) position = 0.0;
+
+			uint8_t param[6];
+			uint8_t length = generateParameters(Address::GoalCurrent, current, 2, param);
 
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
 		}
