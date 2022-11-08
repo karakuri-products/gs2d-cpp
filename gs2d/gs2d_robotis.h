@@ -369,7 +369,7 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return; }
 
-			if (position < 0.0) position = 0.0;
+			if (current < 0.0) current = 0.0;
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::GoalCurrent, current, 2, param);
