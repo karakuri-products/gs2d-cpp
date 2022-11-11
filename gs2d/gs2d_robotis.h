@@ -287,7 +287,7 @@ namespace gs2d
 
 			return (int32_t)getFunction(id, Instructions::Read, param, length, readTorqueProcess, callback);
 		}
-		
+
 		void writeTorqueEnable(uint8_t id, uint8_t torque)
 		{
 			if (!checkId(id)) { badInput(); return; }
@@ -296,6 +296,16 @@ namespace gs2d
 			uint8_t length = generateParameters(Address::TorqueEnable, torque, 1, param);
 
 			getFunction(id, Instructions::Write, param, length, 0, defaultWriteCallback);
+		}
+
+		uint8_t readOperatingMode(uint8_t id, CallbackType callback = 0)
+		{
+			if (!checkId(id)) { badInput(); return 0; }
+
+			uint8_t param[6];
+			uint8_t length = generateParameters(Address::OperatingMode, 1, 2, param);
+
+			return (int32_t)getFunction(id, Instructions::Read, param, length, 0, callback);
 		}
 
 		void writeOperatingMode(uint8_t id, uint8_t mode)
@@ -421,6 +431,21 @@ namespace gs2d
 		gFloat readTargetTime(uint8_t id, CallbackType callback = 0)
 		{
 			if (!checkId(id)) { badInput(); return 0; }
+			if (!(readDriveMode(id) & 0x04)) {
+				invalidMode(); return 0;
+				/*
+				* DynamixelのDriveModeレジスタのBit2が1の場合のみ遷移時間指定が可能です。writeDriveModeで変更してください。
+				* 
+				* Drive Mode :
+				* 0b00000100
+				*   |||||||+------- Reverse Mode
+				*   ||||||+-------- Unused
+				*   |||||+--------- Time-based Profile
+				*   ||||+---------- Torque On by Goal-Update
+				*   ++++----------- Unused
+				*/
+			}
+
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::ProfileVelocity, 4, 2, param);
@@ -430,6 +455,20 @@ namespace gs2d
 		void writeTargetTime(uint8_t id, gFloat targetTime)
 		{
 			if (!checkId(id)) { badInput(); return; }
+			if (!(readDriveMode(id) & 0x04)) {
+				invalidMode(); return;
+				/*
+				* DynamixelのDriveModeレジスタのBit2が1の場合のみ遷移時間指定が可能です。writeDriveModeで変更してください。
+				*
+				* Drive Mode :
+				* 0b00000100
+				*   |||||||+------- Reverse Mode
+				*   ||||||+-------- Unused
+				*   |||||+--------- Time-based Profile
+				*   ||||+---------- Torque On by Goal-Update
+				*   ++++----------- Unused
+				*/
+			}
 
 			if (targetTime < 0) targetTime = 0;
 			else if (targetTime > 32.737) targetTime = 32.737;
@@ -544,6 +583,20 @@ namespace gs2d
 		gFloat readSpeed(uint8_t id, CallbackType callback = 0)
 		{
 			if (!checkId(id)) { badInput(); return 0; }
+			if (readDriveMode(id) & 0x04) {
+				invalidMode(); return 0; 
+				/*
+				* DynamixelのDriveModeレジスタのBit2が0の場合のみ回転速度の指定が可能です。writeDriveModeで変更してください。
+				* 
+				* Drive Mode :
+				* 0b00000100
+				*   |||||||+------- Reverse Mode
+				*   ||||||+-------- Unused
+				*   |||||+--------- Time-based Profile ( 0 : Speed )
+				*   ||||+---------- Torque On by Goal-Update
+				*   ++++----------- Unused
+				*/
+			}
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::PresentVelocity, 4, 2, param);
@@ -553,6 +606,20 @@ namespace gs2d
 		void writeSpeed(uint8_t id, gFloat speed)
 		{
 			if (!checkId(id)) { badInput(); return; }
+			if (readDriveMode(id) & 0x04) {
+				invalidMode(); return;
+				/*
+				* DynamixelのDriveModeレジスタのBit2が0の場合のみ回転速度の指定が可能です。writeDriveModeで変更してください。
+				*
+				* Drive Mode :
+				* 0b00000100
+				*   |||||||+------- Reverse Mode
+				*   ||||||+-------- Unused
+				*   |||||+--------- Time-based Profile ( 0 : Speed )
+				*   ||||+---------- Torque On by Goal-Update
+				*   ++++----------- Unused
+				*/
+			}
 
 			uint32_t rev_min = (int)(speed / 0.229 / 6.0);
 			if (rev_min < 0) rev_min = 0;
@@ -627,6 +694,20 @@ namespace gs2d
 		gFloat readLimitCWPosition(uint8_t id, CallbackType callback = 0)
 		{
 			if (!checkId(id)) { badInput(); return 0; }
+			if (readOperatingMode(id) != 3) {
+				invalidMode(); return 0; 
+				/*
+				* DynamixelのOperatingModeレジスタが3の時のみ有効です。writeOperatingModeで変更してください。
+				*
+				* Operating Mode :
+				* 0 : Current Control Mode
+				* 1 : Velocity Control Mode
+				* 3(Default) : Position Control Mode
+				* 4 : Extended Position Control Mode
+				* 5 : Current-based Position Control Mode
+				* 16 : PWM Control Mode
+				*/
+			}
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::MinPositionLimit, 4, 2, param);
@@ -636,6 +717,20 @@ namespace gs2d
 		void writeLimitCWPosition(uint8_t id, gFloat limitPosition)
 		{
 			if (!checkId(id)) { badInput(); return; }
+			if (readOperatingMode(id) != 3) {
+				invalidMode(); return;
+				/*
+				* DynamixelのOperatingModeレジスタが3の時のみ有効です。writeOperatingModeで変更してください。
+				*
+				* Operating Mode :
+				* 0 : Current Control Mode
+				* 1 : Velocity Control Mode
+				* 3(Default) : Position Control Mode
+				* 4 : Extended Position Control Mode
+				* 5 : Current-based Position Control Mode
+				* 16 : PWM Control Mode
+				*/
+			}
 
 			if (limitPosition > 180.0) limitPosition = 180.0;
 			else if (limitPosition < -180.0) limitPosition = -180.0;
@@ -650,6 +745,20 @@ namespace gs2d
 		gFloat readLimitCCWPosition(uint8_t id, CallbackType callback = 0)
 		{
 			if (!checkId(id)) { badInput(); return 0; }
+			if (readOperatingMode(id) != 3) {
+				invalidMode(); return 0;
+				/*
+				* DynamixelのOperatingModeレジスタが3の時のみ有効です。writeOperatingModeで変更してください。
+				*
+				* Operating Mode :
+				* 0 : Current Control Mode
+				* 1 : Velocity Control Mode
+				* 3(Default) : Position Control Mode
+				* 4 : Extended Position Control Mode
+				* 5 : Current-based Position Control Mode
+				* 16 : PWM Control Mode
+				*/
+			}
 
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::MaxPositionLimit, 4, 2, param);
@@ -659,6 +768,20 @@ namespace gs2d
 		void writeLimitCCWPosition(uint8_t id, gFloat limitPosition)
 		{
 			if (!checkId(id)) { badInput(); return; }
+			if (readOperatingMode(id) != 3) {
+				invalidMode(); return;
+				/*
+				* DynamixelのOperatingModeレジスタが3の時のみ有効です。writeOperatingModeで変更してください。
+				*
+				* Operating Mode :
+				* 0 : Current Control Mode
+				* 1 : Velocity Control Mode
+				* 3(Default) : Position Control Mode
+				* 4 : Extended Position Control Mode
+				* 5 : Current-based Position Control Mode
+				* 16 : PWM Control Mode
+				*/
+			}
 
 			if (limitPosition > 180.0) limitPosition = 180.0;
 			else if (limitPosition < -180.0) limitPosition = -180.0;
