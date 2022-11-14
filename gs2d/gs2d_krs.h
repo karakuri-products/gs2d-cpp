@@ -10,6 +10,7 @@
 #include "gs2d_driver.h"
 #include "gs2d_command.h"
 #include "crc16.h"
+#include <vector>
 
 /* Variables -----------------------------------------------------------------*/
 namespace gs2d
@@ -29,6 +30,8 @@ namespace gs2d
 		};
 		CircularBuffer<KRSTarget, bufferSize> targetStack;
 		KRSTarget currentTarget;
+
+	    
 
 		// EEPROM用に関数二つをoverride
 		void addCommand(uint8_t* data, uint8_t length, ResponseProcess response, CallbackType callback, KRSTarget target = { 0, 0 })
@@ -51,8 +54,12 @@ namespace gs2d
 		}
 
 		// 受信データバッファ
-		bool isReadRomFlag = false;
-		uint8_t eepromData[64];
+		struct KRSRom {
+			uint8_t id;
+			uint8_t data[64];
+		};
+
+		std::vector<KRSRom> eepromBuf;
 
 		// 受信完了チェック関数
 		bool isComplete(uint8_t* data, uint8_t length)
@@ -116,6 +123,9 @@ namespace gs2d
 
 			// パラメータ範囲を抽出
 			uint8_t command = (uint8_t)((data[0] & 0b11100000) >> 5);
+			uint8_t id = (uint8_t)((data[0] & 0b00011111));
+			KRSRom rom;
+
 			switch (command)
 			{
 			case 0:
@@ -124,12 +134,28 @@ namespace gs2d
 			case 1:
 				switch (data[1]) {
 				case 0:
-					memcpy(eepromData, data + 2, 64);
-					isReadRomFlag = true;
 
-					for (uint8_t i = 0; i < currentTarget.length; i++) {
-						tmp += (eepromData[currentTarget.address + i] << (4 * (currentTarget.length - i - 1)));
+					for (uint8_t t = 0; t < eepromBuf.size(); t++) {
+						if (eepromBuf[t].id == id)
+						{
+							memcpy(eepromBuf[t].data, data + 2, 64);
+							for (uint8_t i = 0; i < currentTarget.length; i++) {
+								tmp += (eepromBuf[t].data[currentTarget.address + i] << (4 * (currentTarget.length - i - 1)));
+							}
+							break;
+						}
+
+						if (t == eepromBuf.size() - 1) {
+							memcpy(rom.data, data + 2, 64);
+							eepromBuf.push_back(rom);
+
+							for (uint8_t i = 0; i < currentTarget.length; i++) {
+								tmp += (eepromBuf[t].data[currentTarget.address + i] << (4 * (currentTarget.length - i - 1)));
+							}
+							break;
+						}
 					}
+
 					break;
 				case 5: tmp = data[3] + (data[2] << 7); break;
 				default: tmp = data[2]; break;
@@ -190,6 +216,24 @@ namespace gs2d
 		}
 		void spin() { this->listener(); }
 
+		bool isRomDataAvailable(uint8_t id)
+		{
+			for (uint8_t t = 0; t < eepromBuf.size(); t++) {
+				if (eepromBuf[t].id == id) return true;
+			}
+			return false;
+		}
+
+		uint8_t* getRomData(uint8_t id)
+		{
+			for (uint8_t t = 0; t < eepromBuf.size(); t++) {
+				if (eepromBuf[t].id == id)
+				{
+					return eepromBuf[t].data;
+				}
+			}
+		}
+
 		// ------------------------------------------------------------------------------------------
 		static void defaultWriteCallback(CallbackEventArgs e) {  }
 		static EventDataType temperatureProcess(int32_t data) { return EventDataType((int32_t)(100 - (data - 30) / 1.425)); }
@@ -227,8 +271,10 @@ namespace gs2d
 			if (!checkId(id)) { badInput(); return; }
 
 			// 一度もEEPROMを読み込んでいない場合は終了
-			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
+			if (!isRomDataAvailable(id)) { this->errorBits |= SystemError; return; }
 			if (address + length > 64) { badInput(); return; }
+
+			uint8_t *eepromData = getRomData(id);
 
 			// EEPROMデータを更新
 			for (uint8_t i = 0; i < length; i++) eepromData[address + i] = ((data >> (8 * i)) & 0xFF);
@@ -319,11 +365,12 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return; }
 
-			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
+			if (!isRomDataAvailable(id)) { this->errorBits |= SystemError; return; }
 			if (deadband < 0) { deadband = 0; }
 			else if (deadband > 5) deadband = 5;
 
 			// EEPROMデータを更新
+			uint8_t* eepromData = getRomData(id);
 			eepromData[8] = 0; eepromData[9] = deadband;
 
 			uint8_t command[66];
@@ -437,7 +484,7 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return; }
 
-			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
+			if (!isRomDataAvailable(id)) { this->errorBits |= SystemError; return; }
 
 			uint8_t baudrateId = 0;
 			switch (baudrate)
@@ -448,6 +495,7 @@ namespace gs2d
 			default: badInput(); return;
 			}
 
+			uint8_t* eepromData = getRomData(id);
 			eepromData[27] = baudrateId;
 
 			uint8_t command[66];
@@ -469,10 +517,11 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return; }
 
-			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
+			if (!isRomDataAvailable(id)) { this->errorBits |= SystemError; return; }
 
 			int position = (7500 - limitPosition * 29.629);
 
+			uint8_t* eepromData = getRomData(id);
 			eepromData[16] = (position >> 12) & 0x0F;
 			eepromData[17] = (position >> 8) & 0x0F;
 			eepromData[18] = (position >> 4) & 0x0F;
@@ -497,10 +546,11 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return; }
 
-			if (!isReadRomFlag) { this->errorBits |= SystemError; return; }
+			if (!isRomDataAvailable(id)) { this->errorBits |= SystemError; return; }
 
 			int position = (7500 - limitPosition * 29.629);
 
+			uint8_t* eepromData = getRomData(id);
 			eepromData[20] = (position >> 12) & 0x0F;
 			eepromData[21] = (position >> 8) & 0x0F;
 			eepromData[22] = (position >> 4) & 0x0F;
