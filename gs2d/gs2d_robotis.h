@@ -435,7 +435,7 @@ namespace gs2d
 				invalidMode(); return 0;
 				/*
 				* DynamixelのDriveModeレジスタのBit2が1の場合のみ遷移時間指定が可能です。writeDriveModeで変更してください。
-				* 
+				*
 				* Drive Mode :
 				* 0b00000100
 				*   |||||||+------- Reverse Mode
@@ -486,6 +486,21 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return 0; }
 
+			if (!(readDriveMode(id) & 0x04)) {
+				invalidMode(); return 0;
+				/*
+				* DynamixelのDriveModeレジスタのBit2が1の場合のみ遷移時間指定が可能です。writeDriveModeで変更してください。
+				*
+				* Drive Mode :
+				* 0b00000100
+				*   |||||||+------- Reverse Mode
+				*   ||||||+-------- Unused
+				*   |||||+--------- Time-based Profile
+				*   ||||+---------- Torque On by Goal-Update
+				*   ++++----------- Unused
+				*/
+			}
+
 			uint8_t param[6];
 			uint8_t length = generateParameters(Address::ProfileAcceleration, 4, 2, param);
 
@@ -494,6 +509,20 @@ namespace gs2d
 		void writeAccelTime(uint8_t id, gFloat accelTime)
 		{
 			if (!checkId(id)) { badInput(); return; }
+			if (!(readDriveMode(id) & 0x04)) {
+				invalidMode(); return;
+				/*
+				* DynamixelのDriveModeレジスタのBit2が1の場合のみ遷移時間指定が可能です。writeDriveModeで変更してください。
+				*
+				* Drive Mode :
+				* 0b00000100
+				*   |||||||+------- Reverse Mode
+				*   ||||||+-------- Unused
+				*   |||||+--------- Time-based Profile
+				*   ||||+---------- Torque On by Goal-Update
+				*   ++++----------- Unused
+				*/
+			}
 
 			if (accelTime < 0) accelTime = 0;
 			else if (accelTime > 32.737) accelTime = 32.737;
@@ -584,10 +613,10 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return 0; }
 			if (readDriveMode(id) & 0x04) {
-				invalidMode(); return 0; 
+				invalidMode(); return 0;
 				/*
 				* DynamixelのDriveModeレジスタのBit2が0の場合のみ回転速度の指定が可能です。writeDriveModeで変更してください。
-				* 
+				*
 				* Drive Mode :
 				* 0b00000100
 				*   |||||||+------- Reverse Mode
@@ -695,7 +724,7 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return 0; }
 			if (readOperatingMode(id) != 3) {
-				invalidMode(); return 0; 
+				invalidMode(); return 0;
 				/*
 				* DynamixelのOperatingModeレジスタが3の時のみ有効です。writeOperatingModeで変更してください。
 				*
