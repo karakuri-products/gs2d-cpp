@@ -492,7 +492,7 @@ namespace gs2d
 
             if (limitPosition > 150 || limitPosition < 0) { badInput(); return; }
 
-            uint16_t limitShort = limitPosition * -10;
+            uint16_t limitShort = (int16_t)(limitPosition * -10);
 
             setFunction(id, Address::CCWLimit, limitShort, 2);
         }

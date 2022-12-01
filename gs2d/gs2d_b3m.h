@@ -545,7 +545,7 @@ namespace gs2d
 		{
 			if (!checkId(id)) { badInput(); return; }
 
-			uint16_t limitInt = -limitPosition * 100.0;
+			uint16_t limitInt = (int16_t)(-limitPosition * 100.0);
 
 			uint8_t param[4]{ limitInt & 0xFF, (limitInt >> 8) & 0xFF, Address::CCWLimit, 1 };
 
