@@ -338,6 +338,21 @@ namespace gs2d
 			getFunction(command, 3, 0, defaultWriteCallback);
 		}
 
+
+		void writeTargetPosition(uint8_t id, gFloat position, gFloat *currentPosition)
+		{
+			uint8_t command[3] = { (0b10000000 | id), 0, 0 };
+
+			if (position < -135) position = -135;
+			else if (position > 135) position = 135;
+
+			uint16_t tch = (uint16_t)(7500 - 29.629 * position);
+
+			command[1] = ((tch >> 7) & 0x7F);
+			command[2] = ((tch) & 0x7F);
+			*currentPosition = (gFloat)getFunction(command, 3, positionProcess, 0);
+		}
+
 		// Current Position
 		gFloat readCurrentPosition(uint8_t id, CallbackType callback = 0)
 		{
