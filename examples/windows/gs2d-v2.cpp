@@ -1,13 +1,11 @@
-﻿// gs2d-v2.cpp : このファイルには 'main' 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
+// gs2d-v2.cpp : このファイルには 'main'
+// 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
 //
 
 #include <iostream>
 
-#include "gs2d_robotis.h"
-#include "gs2d_krs.h"
-#include "gs2d_b3m.h"
-#include "gs2d_futaba.h"
 #include "WindowsSerial.h"
+#include "gs2d.h"
 
 using namespace gs2d;
 
@@ -21,9 +19,9 @@ int main()
     uint8_t id = 2;
 
     Driver* servo = new RobotisP20<gs2d::WindowsSerial>();
-//    Driver* servo = new Futaba<gs2d::WindowsSerial>();
-//    Driver* servo = new KRS<gs2d::WindowsSerial>();
-//    Driver* servo = new B3M<gs2d::WindowsSerial>();
+    //    Driver* servo = new Futaba<gs2d::WindowsSerial>();
+    //    Driver* servo = new KRS<gs2d::WindowsSerial>();
+    //    Driver* servo = new B3M<gs2d::WindowsSerial>();
 
     // Ping
     std::cout << "Ping : " << (int)servo->ping(id) << std::endl;
@@ -40,11 +38,11 @@ int main()
     std::cout << "PGain Write : " << std::endl; servo->writePGain(id, 800);
     std::cout << "PGain Read : " << servo->readPGain(id) << std::endl;
 
-    // I Gain 
+    // I Gain
     std::cout << "IGain Write : " << std::endl; servo->writeIGain(id, 400);
     std::cout << "IGain Read : " << servo->readIGain(id) << std::endl;
 
-    // D Gain 
+    // D Gain
     std::cout << "DGain Write : " << std::endl; servo->writeDGain(id, 300);
     std::cout << "DGain Read : " << servo->readDGain(id) << std::endl;
 
@@ -53,7 +51,7 @@ int main()
     std::cout << "MaxTorque Read : " << servo->readMaxTorque(id) << std::endl;
 
     // ID
-//    std::cout << "ID Write : " << std::endl; servo->writeID(id, id);
+    //    std::cout << "ID Write : " << std::endl; servo->writeID(id, id);
     std::cout << "ID Read : " << servo->readID(id) << std::endl;
 
     // ROM
@@ -86,7 +84,7 @@ int main()
     // Drive Mode
     std::cout << "Drive Mode Write : " << std::endl; servo->writeDriveMode(id, 4);
     std::cout << "Drive Mode Read : " << servo->readDriveMode(id) << std::endl;
-    
+
     // Torque Enable
     std::cout << "Torque Enable Write : " << std::endl; servo->writeTorqueEnable(id, 1);
     std::cout << "Torque Enable Read : " << (int)servo->readTorqueEnable(id) << std::endl;
@@ -138,8 +136,8 @@ int main()
 // プログラムの実行: Ctrl + F5 または [デバッグ] > [デバッグなしで開始] メニュー
 // プログラムのデバッグ: F5 または [デバッグ] > [デバッグの開始] メニュー
 
-// 作業を開始するためのヒント: 
-//    1. ソリューション エクスプローラー ウィンドウを使用してファイルを追加/管理します 
+// 作業を開始するためのヒント:
+//    1. ソリューション エクスプローラー ウィンドウを使用してファイルを追加/管理します
 //   2. チーム エクスプローラー ウィンドウを使用してソース管理に接続します
 //   3. 出力ウィンドウを使用して、ビルド出力とその他のメッセージを表示します
 //   4. エラー一覧ウィンドウを使用してエラーを表示します

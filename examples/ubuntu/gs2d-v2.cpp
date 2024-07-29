@@ -3,11 +3,8 @@
 
 #include <iostream>
 
-#include "gs2d_robotis.h"
-#include "gs2d_krs.h"
-#include "gs2d_b3m.h"
-#include "gs2d_futaba.h"
 #include "LinuxSerial.h"
+#include "gs2d.h"
 
 using namespace gs2d;
 
