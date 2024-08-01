@@ -1,0 +1,19 @@
+{
+    "name": "gs2d",
+    "keywords": "serial, servo, motor, device, control, futaba, dynamixel",
+    "description": "gs2d (Generic Serial-bus Servo Driver) Library",
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/karakuri-products/gs2d-cpp"
+    },
+    "authors":
+    {
+        "name": "",
+        "url": "https://github.com/karakuri-products/gs2d"
+    },
+    "version": "0.0.1",
+    "license": "Apache-2.0",
+    "frameworks": "*",
+    "platforms": "*"
+}

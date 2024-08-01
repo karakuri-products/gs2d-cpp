@@ -1,6 +1,6 @@
 #pragma once
 
-namespace crc16
+namespace gs2d::util::crc16
 {
 	unsigned short calculate(unsigned char* data, unsigned short length)
 	{

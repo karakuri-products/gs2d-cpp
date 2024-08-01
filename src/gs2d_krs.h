@@ -9,7 +9,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gs2d_driver.h"
 #include "gs2d_command.h"
-#include "crc16.h"
 #include <vector>
 
 /* Variables -----------------------------------------------------------------*/
@@ -31,7 +30,7 @@ namespace gs2d
 		CircularBuffer<KRSTarget, bufferSize> targetStack;
 		KRSTarget currentTarget;
 
-	    
+
 
 		// EEPROM用に関数二つをoverride
 		void addCommand(uint8_t* data, uint8_t length, ResponseProcess response, CallbackType callback, KRSTarget target = { 0, 0 })

@@ -9,7 +9,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gs2d_driver.h"
 #include "gs2d_command.h"
-#include "crc16.h"
+#include "gs2d_util_crc16.h"
 
 /* Variables -----------------------------------------------------------------*/
 namespace gs2d
@@ -109,7 +109,7 @@ namespace gs2d
 
 				// CheckSum検証
 				uint16_t crc = data[length - 2] + (data[length - 1] << 8);
-				if (crc != crc16::calculate(data, length - 2)) { this->errorBits |= ResponseError; break; }
+				if (crc != gs2d::util::crc16::calculate(data, length - 2)) { this->errorBits |= ResponseError; break; }
 			} while (false);
 
 			// エラーがあれば終了
@@ -194,7 +194,7 @@ namespace gs2d
 			if (length) memcpy(command + 8, param, length);
 
 			// CheckSum設定
-			uint16_t crc = crc16::calculate(command, bufferLength - 2);
+			uint16_t crc = gs2d::util::crc16::calculate(command, bufferLength - 2);
 			command[bufferLength - 2] = crc & 0xFF;
 			command[bufferLength - 1] = (crc >> 8) & 0xFF;
 
