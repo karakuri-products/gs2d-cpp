@@ -9,7 +9,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gs2d_driver.h"
 #include "gs2d_command.h"
-#include "crc16.h"
 
 /* Variables -----------------------------------------------------------------*/
 namespace gs2d
